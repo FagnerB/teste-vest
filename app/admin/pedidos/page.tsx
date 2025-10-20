@@ -1,39 +1,18 @@
 'use client'
-
-import { useState } from 'react'
-import { mockOrders } from '@/lib/data/mock-admin'
+import { useEffect, useState } from 'react'
+import { listarPedidos } from '../../../services/pedidos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Search, Eye, Package, Truck, CheckCircle, XCircle } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import Image from 'next/image'
-import type { Order } from '@/lib/types/admin'
 
-const statusConfig = {
+// Config de status do pedido
+const statusConfig: any = {
   pending: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800', icon: Package },
   processing: { label: 'Processando', color: 'bg-blue-100 text-blue-800', icon: Package },
   shipped: { label: 'Enviado', color: 'bg-purple-100 text-purple-800', icon: Truck },
@@ -44,22 +23,30 @@ const statusConfig = {
 export default function PedidosPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  
-  const filteredOrders = mockOrders.filter((order) => {
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
+  const [orders, setOrders] = useState<any[]>([])
+
+  useEffect(() => {
+    listarPedidos().then(setOrders)
+    // Para simular: remova acima e use mock abaixo
+    // setOrders([
+    //   {id:1, orderNumber:"0001", customer:{name:"Fulano", email:"a@email.com", phone:"111"},items:[],total:29,status:"pending",paymentMethod:"Pix",createdAt:Date.now(),shippingAddress:{street:"Rua x",number:"1",complement:"",neighborhood:"Bairro",city:"Cidade",state:"UF",zipCode:"00000000"}}
+    // ])
+  }, [])
+
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-    
+      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customer?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter
-    
     return matchesSearch && matchesStatus
   })
 
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+  // Atualização de status (placeholder)
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
     console.log(`Updating order ${orderId} to status ${newStatus}`)
-    // Aqui você implementaria a lógica de atualização
+    // Aqui você implementaria a lógica de atualização na API
   }
 
   return (
@@ -122,8 +109,7 @@ export default function PedidosPage() {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order) => {
-                const StatusIcon = statusConfig[order.status].icon
-                
+                const StatusIcon = statusConfig[order.status]?.icon || Package;
                 return (
                   <TableRow key={order.id}>
                     <TableCell>
@@ -147,9 +133,9 @@ export default function PedidosPage() {
                       R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusConfig[order.status].color}>
+                      <Badge className={statusConfig[order.status]?.color}>
                         <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusConfig[order.status].label}
+                        {statusConfig[order.status]?.label}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -174,8 +160,7 @@ export default function PedidosPage() {
                               {order.orderNumber}
                             </DialogDescription>
                           </DialogHeader>
-                          
-                          {selectedOrder && (
+                          {selectedOrder && selectedOrder.id === order.id && (
                             <div className="space-y-6">
                               {/* Customer Info */}
                               <div>
@@ -186,7 +171,6 @@ export default function PedidosPage() {
                                   <p className="text-muted-foreground">{selectedOrder.customer.phone}</p>
                                 </div>
                               </div>
-
                               {/* Shipping Address */}
                               <div>
                                 <h3 className="font-semibold mb-2">Endereço de Entrega</h3>
@@ -200,12 +184,11 @@ export default function PedidosPage() {
                                   <p>CEP: {selectedOrder.shippingAddress.zipCode}</p>
                                 </div>
                               </div>
-
                               {/* Order Items */}
                               <div>
                                 <h3 className="font-semibold mb-2">Itens do Pedido</h3>
                                 <div className="space-y-3">
-                                  {selectedOrder.items.map((item) => (
+                                  {selectedOrder.items.map((item: any) => (
                                     <div key={item.id} className="flex gap-3 items-start">
                                       <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                         <Image
@@ -235,7 +218,6 @@ export default function PedidosPage() {
                                   ))}
                                 </div>
                               </div>
-
                               {/* Total */}
                               <div className="border-t pt-4">
                                 <div className="flex justify-between items-center">
@@ -245,13 +227,12 @@ export default function PedidosPage() {
                                   </span>
                                 </div>
                               </div>
-
                               {/* Update Status */}
                               <div>
                                 <h3 className="font-semibold mb-2">Atualizar Status</h3>
                                 <Select
                                   defaultValue={selectedOrder.status}
-                                  onValueChange={(value) => updateOrderStatus(selectedOrder.id, value as Order['status'])}
+                                  onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
                                 >
                                   <SelectTrigger>
                                     <SelectValue />
@@ -277,10 +258,9 @@ export default function PedidosPage() {
           </Table>
         </CardContent>
       </Card>
-
       {/* Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Mostrando {filteredOrders.length} de {mockOrders.length} pedidos</p>
+        <p>Mostrando {filteredOrders.length} de {orders.length} pedidos</p>
       </div>
     </div>
   )

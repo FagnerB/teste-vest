@@ -1,16 +1,12 @@
 "use client"
 
-import type React from 'react'
+import type { ReactNode } from "react"
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/admin/protected-route'
 import { usePathname } from 'next/navigation'
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const isLoginPage = pathname === '/admin/login'
 

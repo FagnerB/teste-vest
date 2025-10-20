@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -7,20 +8,25 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/contexts/CartContext"
 import { Product } from "@/types/cart"
-import { getProductById } from "@/data/products"
 import { ShoppingCart, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
 import { toast } from "sonner"
-
-
+import { consultarProduto } from "../../../services/produtos" // integração backend
 
 export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = getProductById(parseInt(params.id))
+  const [product, setProduct] = useState<Product | null>(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedSize, setSelectedSize] = useState("")
   const [selectedColor, setSelectedColor] = useState("")
   const { addItem } = useCart()
+
+  useEffect(() => {
+    if (params?.id) {
+      consultarProduto(Number(params.id))
+        .then(setProduct)
+        .catch(() => setProduct(null))
+    }
+  }, [params?.id])
 
   // Redirect to 404 if product not found
   if (!product) {
@@ -49,7 +55,6 @@ export default function ProductPage({ params }: { params: { id: string } }) {
       toast.error("Por favor, selecione a cor.")
       return
     }
-    
     addItem(product, 1, selectedSize, selectedColor)
     toast.success(`${product.name} adicionado ao carrinho!`)
   }
@@ -111,14 +116,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 <label className="text-sm font-semibold text-foreground">Tamanho</label>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
-                  <Button
-                    key={size}
-                    variant={selectedSize === size ? "default" : "outline"}
-                    onClick={() => setSelectedSize(size)}
-                    className={selectedSize === size ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    {size}
-                  </Button>
+                    <Button
+                      key={size}
+                      variant={selectedSize === size ? "default" : "outline"}
+                      onClick={() => setSelectedSize(size)}
+                      className={selectedSize === size ? "bg-primary text-primary-foreground" : ""}
+                    >
+                      {size}
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -130,14 +135,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                 <label className="text-sm font-semibold text-foreground">Cor</label>
                 <div className="flex flex-wrap gap-2">
                   {product.colors.map((color) => (
-                  <Button
-                    key={color}
-                    variant={selectedColor === color ? "default" : "outline"}
-                    onClick={() => setSelectedColor(color)}
-                    className={selectedColor === color ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    {color}
-                  </Button>
+                    <Button
+                      key={color}
+                      variant={selectedColor === color ? "default" : "outline"}
+                      onClick={() => setSelectedColor(color)}
+                      className={selectedColor === color ? "bg-primary text-primary-foreground" : ""}
+                    >
+                      {color}
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -146,9 +151,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
             {/* CTA */}
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-6 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Adicione ao carrinho e finalize sua compra com facilidade.
-                </p>
+                <p className="text-sm text-muted-foreground">Adicione ao carrinho e finalize sua compra com facilidade.</p>
                 <Button
                   size="lg"
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -158,9 +161,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                   Adicionar ao Carrinho
                 </Button>
                 <Button asChild variant="outline" size="lg" className="w-full">
-                  <Link href="/carrinho">
-                    Ver Carrinho
-                  </Link>
+                  <Link href="/carrinho">Ver Carrinho</Link>
                 </Button>
               </CardContent>
             </Card>

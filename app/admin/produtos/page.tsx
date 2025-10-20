@@ -1,37 +1,34 @@
 'use client'
-
-import { useState } from 'react'
-import { mockProducts } from '@/lib/data/mock-admin'
+import { useEffect, useState } from 'react'
+// Listagem via FastAPI backend
+import { listarProdutos } from '@/services/produtos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, MoreVertical, Pencil, Trash2, Search, Eye } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 export default function ProdutosPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  
-  const filteredProducts = mockProducts.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const [products, setProducts] = useState<any[]>([])
+  const router = useRouter()
+
+  useEffect(() => {
+    listarProdutos().then(setProducts).catch((err) => {
+      console.error('Falha ao carregar produtos do backend:', err)
+      setProducts([])
+    })
+  }, [])
+
+  const filteredProducts = products.filter((product: any) =>
+    (product.nome || product.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.category || '')?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -44,9 +41,11 @@ export default function ProdutosPage() {
             Gerencie o catálogo de produtos
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
+        <Button asChild>
+          <Link href="/admin/produtos/novo">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Produto
+          </Link>
         </Button>
       </div>
 
@@ -91,14 +90,14 @@ export default function ProdutosPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted">
                         <Image
-                          src={product.images[0]}
-                          alt={product.name}
+                          src={(product.images?.[0] || product.image) || "/placeholder.svg"}
+                          alt={product.nome || product.name}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div>
-                        <p className="font-medium">{product.name}</p>
+                        <p className="font-medium">{product.nome || product.name}</p>
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {product.description}
                         </p>
@@ -107,11 +106,11 @@ export default function ProdutosPage() {
                   </TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>
-                    R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {Number(product.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={product.stock > 20 ? 'default' : product.stock > 0 ? 'secondary' : 'destructive'}>
-                      {product.stock} unidades
+                    <Badge variant={(product.stock ?? 0) > 20 ? 'default' : (product.stock ?? 0) > 0 ? 'secondary' : 'destructive'}>
+                      {(product.stock ?? 'N/A')} unidades
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -135,11 +134,23 @@ export default function ProdutosPage() {
                           <Eye className="h-4 w-4 mr-2" />
                           Visualizar
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Editar
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/produtos/${product.id}/editar`}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={async () => {
+                            try {
+                              // TODO: implementar exclusão via FastAPI quando disponível
+                              toast.error('Exclusão ainda não implementada no backend')
+                            } catch (err: any) {
+                              toast.error(err?.message || 'Falha ao excluir')
+                            }
+                          }}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Excluir
                         </DropdownMenuItem>
@@ -155,7 +166,7 @@ export default function ProdutosPage() {
 
       {/* Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Mostrando {filteredProducts.length} de {mockProducts.length} produtos</p>
+        <p>Mostrando {filteredProducts.length} de {products.length} produtos</p>
       </div>
     </div>
   )

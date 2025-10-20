@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -7,20 +8,28 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/contexts/CartContext"
 import { Product } from "@/types/cart"
-import { products, categories } from "@/data/products"
+import { categories } from "@/data/products" // Mantém se suas categorias forem fixas
 import { ShoppingCart, Eye } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
 import { toast } from "sonner"
-
-
+import { listarProdutos } from "../../services/produtos"
 
 export default function LojaPage() {
   const [selectedCategory, setSelectedCategory] = useState("Todos")
   const { addItem } = useCart()
+  const [products, setProducts] = useState<Product[]>([])
+
+  // Traz os produtos do backend FastAPI
+  useEffect(() => {
+    listarProdutos()
+      .then(setProducts)
+      .catch(() => toast.error("Erro ao buscar produtos"))
+  }, [])
 
   const filteredProducts =
-    selectedCategory === "Todos" ? products : products.filter((product) => product.category === selectedCategory)
+    selectedCategory === "Todos"
+      ? products
+      : products.filter((product) => product.category === selectedCategory)
 
   const handleAddToCart = (product: Product) => {
     addItem(product, 1)

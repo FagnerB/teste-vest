@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -10,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, Instagram, MapPin } from "lucide-react"
-import { useState } from "react"
+import { enviarContato } from "../../services/contato"
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -19,9 +18,25 @@ export default function ContatoPage() {
     message: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Função de envio
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
+
+    // 1. Salva mensagem no backend FastAPI
+    try {
+      await enviarContato({
+        nome: formData.name,
+        email: formData.email,
+        mensagem: formData.message
+      })
+      // Opcional: mostrar o toast de sucesso
+      alert("Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.")
+    } catch {
+      alert("Erro ao enviar mensagem. Tente novamente.")
+      return
+    }
+
+    // 2. Envia para WhatsApp
     const message = encodeURIComponent(
       `Nome: ${formData.name}\nEmail: ${formData.email}\nMensagem: ${formData.message}`,
     )
@@ -57,6 +72,7 @@ export default function ContatoPage() {
               </div>
 
               <div className="space-y-6">
+                {/* WhatsApp */}
                 <Card className="border-border">
                   <CardContent className="p-6 flex items-start space-x-4">
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -77,6 +93,7 @@ export default function ContatoPage() {
                   </CardContent>
                 </Card>
 
+                {/* Email */}
                 <Card className="border-border">
                   <CardContent className="p-6 flex items-start space-x-4">
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -95,6 +112,7 @@ export default function ContatoPage() {
                   </CardContent>
                 </Card>
 
+                {/* Instagram */}
                 <Card className="border-border">
                   <CardContent className="p-6 flex items-start space-x-4">
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -115,6 +133,7 @@ export default function ContatoPage() {
                   </CardContent>
                 </Card>
 
+                {/* Localização */}
                 <Card className="border-border">
                   <CardContent className="p-6 flex items-start space-x-4">
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">

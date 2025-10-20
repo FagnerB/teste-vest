@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -13,8 +14,8 @@ import { useCEP } from "@/hooks/useCEP"
 import { PaymentMethod, DeliveryMethod, DeliveryAddress, OrderData } from "@/types/cart"
 import { MessageCircle, Minus, Plus, Trash2, ShoppingBag, MapPin, CreditCard } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
 import { toast } from "sonner"
+import { criarPedido } from "../../services/pedidos" // Importação do serviço
 
 export default function CarrinhoPage() {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice, getTotalItems } = useCart()
@@ -37,7 +38,6 @@ export default function CarrinhoPage() {
   const handleCEPChange = async (cep: string) => {
     const formattedCEP = formatCEP(cep)
     setDeliveryAddress(prev => ({ ...prev, cep: formattedCEP }))
-    
     if (formattedCEP.replace(/\D/g, '').length === 8) {
       const addressData = await fetchAddressByCEP(formattedCEP)
       if (addressData) {
@@ -49,7 +49,7 @@ export default function CarrinhoPage() {
     }
   }
 
-  const generateWhatsAppMessage = () => {
+  const generateWhatsAppMessage = async () => {
     if (items.length === 0) {
       toast.error("Seu carrinho está vazio!")
       return
@@ -65,6 +65,29 @@ export default function CarrinhoPage() {
       return
     }
 
+    // Envio para backend (FastAPI)
+    try {
+      await criarPedido({
+        cliente_id: 1, // Troque por ID real se houver login
+        total: getTotalPrice(),
+        status: "novo",
+        pagamento: paymentMethod,
+        endereco_entrega_id: 1, // Troque/exclua se usar info do carrinho/endereço
+        items: items.map((item) => ({
+          produto_id: item.id,
+          quantidade: item.quantity,
+          preco: item.price,
+          tamanho: item.selectedSize,
+          cor: item.selectedColor
+        }))
+      })
+      toast.success("Pedido registrado no sistema!")
+    } catch {
+      toast.error("Erro ao salvar pedido no sistema!")
+      return
+    }
+
+    // Mensagem para WhatsApp — igual ao seu código original
     const orderData: OrderData = {
       items,
       paymentMethod,
@@ -122,9 +145,8 @@ export default function CarrinhoPage() {
 
     const encodedMessage = encodeURIComponent(message)
     const whatsappUrl = `https://wa.me/5511999999999?text=${encodedMessage}`
-    
     window.open(whatsappUrl, '_blank')
-    
+
     // Clear cart after sending order
     clearCart()
     toast.success("Pedido enviado! Entraremos em contato em breve.")
@@ -148,6 +170,11 @@ export default function CarrinhoPage() {
       </div>
     )
   }
+
+
+  
+}
+
 
   return (
     <div className="min-h-screen flex flex-col">

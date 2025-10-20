@@ -6,33 +6,33 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { loginAdmin } from "../../../services/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { login } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email || !password) {
       toast.error("Por favor, preencha todos os campos.")
       return
     }
 
     setIsSubmitting(true)
-    
+
     try {
-      const success = await login(email, password)
-      
-      if (success) {
+      // loginAdmin DEVE enviar {grant_type, username, password}
+      const token = await loginAdmin(email, password)
+      if (token) {
+        localStorage.setItem("token", token)
         toast.success("Login realizado com sucesso!")
         router.push("/admin/dashboard")
       } else {
@@ -122,9 +122,9 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
